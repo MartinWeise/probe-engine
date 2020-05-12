@@ -3,12 +3,13 @@ package urls
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+	_ "github.com/lib/pq"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -40,15 +41,36 @@ func Query(ctx context.Context, config Config) (*Result, error) {
 	if len(config.EnabledCategories) > 0 {
 		query.Set("category_codes", strings.Join(config.EnabledCategories, ","))
 	}
-	var response Result
-	err := (&jsonapi.Client{
-		BaseURL:    config.BaseURL,
-		HTTPClient: config.HTTPClient,
-		Logger:     config.Logger,
-		UserAgent:  config.UserAgent,
-	}).ReadWithQuery(ctx, "/api/v1/test-list/urls", query, &response)
+	pages, err := githubPages()
 	if err != nil {
 		return nil, err
 	}
+	return pages, nil
+}
+
+func githubPages() (*Result, error) {
+	var results []model.URLInfo
+	db, err := sql.Open("postgres", "postgres://postgres:postgres@db/cendet?sslmode=disable")
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	rows, err := db.Query("SELECT 'GITHUB' as CategoryCode, 'XX' as CountryCode, LOWER(r.name) as URL FROM repository r GROUP BY r.name")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		row := model.URLInfo{}
+		err := rows.Scan(&row)
+		if err != nil {
+			// ignore
+		}
+		results = append(results, row)
+	}
+	response := Result{
+		Results: results,
+	}
+	fmt.Printf("   • Queried %d results from database\n", len(response.Results))
 	return &response, nil
 }

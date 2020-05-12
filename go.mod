@@ -36,6 +36,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
 	github.com/juju/ratelimit v1.0.2-0.20191002062651-f60b32039441 // indirect
+	github.com/lib/pq v1.5.2
 	github.com/m-lab/ndt7-client-go v0.3.0
 	github.com/marusama/semaphore v0.0.0-20171214154724-565ffd8e868a // indirect
 	github.com/miekg/dns v1.1.29
