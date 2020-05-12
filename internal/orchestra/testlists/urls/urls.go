@@ -5,10 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	_ "github.com/lib/pq"
 	"net/http"
 	"net/url"
 	"strings"
-	_ "github.com/lib/pq"
 
 	"github.com/ooni/probe-engine/model"
 )
@@ -55,18 +55,18 @@ func githubPages() (*Result, error) {
 		return nil, err
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT 'GITHUB' as CategoryCode, 'XX' as CountryCode, LOWER(r.name) as URL FROM repository r GROUP BY r.name")
+	rows, err := db.Query("SELECT 'GITHUB' as CategoryCode, 'XX' as CountryCode, CONCAT('https://', REPLACE(LOWER(r.name), '(.*)\\.github\\.io', '$1.github.io')) AS URL FROM repository r WHERE r.name != 'github.io' AND r.name != 'github.com'")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		row := model.URLInfo{}
-		err := rows.Scan(&row)
+		urlinfo := model.URLInfo{}
+		err := rows.Scan(&urlinfo.CategoryCode, &urlinfo.CountryCode, &urlinfo.URL)
 		if err != nil {
-			// ignore
+			return nil, err
 		}
-		results = append(results, row)
+		results = append(results, urlinfo)
 	}
 	response := Result{
 		Results: results,
