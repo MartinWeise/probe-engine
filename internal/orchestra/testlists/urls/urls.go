@@ -55,7 +55,7 @@ func githubPages() (*Result, error) {
 		return nil, err
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT 'GITHUB' as CategoryCode, 'XX' as CountryCode, CONCAT('https://', REPLACE(LOWER(r.name), '(.*)\\.github\\.io', '$1.github.io')) AS URL FROM repository r WHERE r.name != 'github.io' AND r.name != 'github.com'")
+	rows, err := db.Query("SELECT CategoryCode, CountryCode, URL FROM urls")
 	if err != nil {
 		return nil, err
 	}
